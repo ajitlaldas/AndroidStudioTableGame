@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Play Table Game</string>
+    <string name="buttonPlayTableGame_contentDescriptor">Pay Table Game</string>
+    <string name="etTableGameFor_hint">Enter No to Play Game For: </string>
+    <string name="buttonTableGameFor_text">   START   </string>
+    <string name="tvPlayTableGame_description">Enter a no &amp; Press button below to play table game</string>
+</resources>
