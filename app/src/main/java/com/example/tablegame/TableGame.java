@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.ScaleAnimation;
@@ -30,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-class TableSound{
+/*class TableSound{
 
     static int [] sounds = {R.raw.en_num_ja
             ,R.raw.en_num_01, R.raw.en_num_02, R.raw.en_num_03, R.raw.en_num_04
@@ -49,7 +50,7 @@ class TableSound{
 
             }
             i++;
-        }*/
+        }
 
 
 
@@ -99,7 +100,7 @@ class TableSound{
     }
 
 
-}
+}*/
 
 public class TableGame extends AppCompatActivity {
 
@@ -107,24 +108,36 @@ public class TableGame extends AppCompatActivity {
     LinearLayout tablePlayAreaLayout;
     LinearLayout choiceLayout;
     TextView [] tvTableRow = new TextView[10];
-    TextView [] tvChoiceRow = new TextView[5];
-    int tvTableRowCurrentIndex = 0, tvChoiceRowCurrentIndex = 0;
+    TextView [] tvChoiceBox = new TextView[5];
+    int tvTableRowCurrentIndex = 0, tvChoiceBoxCurrentIndex = 0;
     MediaPlayer [] media = new MediaPlayer[3];
     MediaPlayer gameStatusSound =new MediaPlayer();
     ImageView ivGameStatus;
 
+    TextToSpeech tts;
+
 
     boolean gameON = false;
-    final int PURPLE = 0xFF9E02B8;
-    final int GREEN = 0xFF76FF03;
-    final int ORANGE = 0xFFFF5722;
-    final int BUFF = 0xFFED6868;
-    final int MUSTARD_LIGHT = 0x7CFF9100;
+    static final int PURPLE = 0xFF9E02B8;
+    static final int GREEN = 0xFF76FF03;
+    static final int ORANGE = 0xFFFF5722;
+    static final int BUFF = 0xFFED6868;
+    static final int MUSTARD_LIGHT = 0x7CFF9100;
+
+    static final int GAME_MODE_LEARN = 0;
+    static final int GAME_MODE_KID = 1;
+    static final int GAME_MODE_CHALLENGE = 2;
+    static final int GAME_MODE_CHALLENGE_PLUS = 3;
+    static final int GAME_MODE_CHALLENGE_PLUS_PLUS = 4;
 
     static int tableNumber;
+    static boolean isSoundOn = true;
+    static int gameMode = GAME_MODE_KID;
 
-    static boolean correctAnswerClicked;
-    static int tableMultiplier;
+    static boolean correctAnswerClicked =false;
+    static boolean wrongAnswerClicked = false;
+
+    static int tableMultiplier = 1;
 
     static List<Integer> choiceList = new ArrayList<>();
 
@@ -134,6 +147,7 @@ public class TableGame extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_table_game);
         Intent data = getIntent();
+        tableNumber= Integer.parseInt(data.getStringExtra("tableNumber"));
 
 
         tablePlayAreaLayout = findViewById(R.id.tablePlayAreaLayout);
@@ -146,7 +160,7 @@ public class TableGame extends AppCompatActivity {
         tableNumber= Integer.parseInt(data.getStringExtra("tableNumber"));
 
 
-
+        //tvTableRow is array[10] of TableRow Views. Here we are initializing it & setting visibility to GONE
         for (tvTableRowCurrentIndex=0; tvTableRowCurrentIndex<10; tvTableRowCurrentIndex++){
             tvTableRow[tvTableRowCurrentIndex] = (TextView) (tablePlayAreaLayout.getChildAt(tvTableRowCurrentIndex));
             tvTableRow[tvTableRowCurrentIndex].setVisibility(View.GONE);
@@ -154,168 +168,227 @@ public class TableGame extends AppCompatActivity {
         }
         tvTableRowCurrentIndex = 0;
 
-        for (tvChoiceRowCurrentIndex=0; tvChoiceRowCurrentIndex<5; tvChoiceRowCurrentIndex++){
-            tvChoiceRow[tvChoiceRowCurrentIndex] = (TextView) (choiceLayout.getChildAt(tvChoiceRowCurrentIndex));
-            tvChoiceRow[tvChoiceRowCurrentIndex].setVisibility(View.GONE);
-            tvChoiceRow[tvChoiceRowCurrentIndex].setOnClickListener(new View.OnClickListener() {
+        //tvChocieBox is array[5] of Choice Box Views. Here we are initializing it & setting visibility to GONE.
+        //Also OnClickListeners are set for all choice boxes to gather if correct answer is clicked by player.
+        for (tvChoiceBoxCurrentIndex=0; tvChoiceBoxCurrentIndex<5; tvChoiceBoxCurrentIndex++){
+            tvChoiceBox[tvChoiceBoxCurrentIndex] = (TextView) (choiceLayout.getChildAt(tvChoiceBoxCurrentIndex));
+            tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.GONE);
+            tvChoiceBox[tvChoiceBoxCurrentIndex].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view1) {
                     TextView tv1 = (TextView) view1;
                     if (Integer.parseInt(tv1.getText().toString()) == tableNumber*tableMultiplier){
                         correctAnswerClicked = true;
+                        wrongAnswerClicked = false;
                         playTableGame();
                     }
-                    else if (gameON){
-                        gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.gunshot);
-
-                        ivGameStatus.setImageResource(R.drawable.no);
-                        ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
-                        scaleAnimation.setDuration(500l);
-                        ivGameStatus.startAnimation(scaleAnimation);
-
-                        gameStatusSound.start();
+                    else {
+                        correctAnswerClicked = false;
+                        wrongAnswerClicked = true;
+                        playTableGame();
                     }
 
                 }
 
             });
         }
-        tvChoiceRowCurrentIndex = 0;
+        tvChoiceBoxCurrentIndex = 0;
 
-        for (tvTableRowCurrentIndex=0; tvTableRowCurrentIndex<10; tvTableRowCurrentIndex++){
+        /*for (tvTableRowCurrentIndex=0; tvTableRowCurrentIndex<10; tvTableRowCurrentIndex++){
             tvTableRow[tvTableRowCurrentIndex].setVisibility(View.GONE);
         }
-        tvTableRowCurrentIndex = 0;
+        tvTableRowCurrentIndex = 0;*/
 
-        for (tvChoiceRowCurrentIndex=0; tvChoiceRowCurrentIndex<5; tvChoiceRowCurrentIndex++){
-            tvChoiceRow[tvChoiceRowCurrentIndex].setVisibility(View.GONE);
+        /*for (tvChoiceBoxCurrentIndex=0; tvChoiceBoxCurrentIndex<5; tvChoiceBoxCurrentIndex++){
+            tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.GONE);
         }
+        tvChoiceBoxCurrentIndex = 0;
+
         if(gameON) {
             TableSound.releaseSound(media);
         }
-        tvChoiceRowCurrentIndex = 0;
 
-        tableMultiplier = 1;
-        correctAnswerClicked = false;
-        gameON = true;
-        ivGameStatus.setImageResource(R.drawable.gameison);
-        ivGameStatus.setVisibility(View.VISIBLE);
+        */
 
-        ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
-        scaleAnimation.setDuration(500l);
-        ivGameStatus.startAnimation(scaleAnimation);
 
-        media = TableSound.createSound(TableGame.this, tableNumber, tableMultiplier);
-        TableSound.playSound(media);
-        playTableGame();
+
+
+
+        if (isSoundOn){
+            tts = new TextToSpeech(TableGame.this, new TextToSpeech.OnInitListener() {
+                @Override
+                public void onInit(int status) {
+
+                    if (status == TextToSpeech.SUCCESS) {
+                        //tts.speak("Starting Table Game for " + etTableNumber.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
+
+                        //Toast.makeText(TableGame.this, "TTS Initilization Success", Toast.LENGTH_LONG).show();
+
+                        // Setting speech language
+
+                        int result = tts.setLanguage(Locale.UK);
+                        // If your device doesn't support language you set above
+                        if (result == TextToSpeech.LANG_MISSING_DATA
+                                || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                            // Cook simple toast message with message
+                            Toast.makeText(getApplicationContext(), "Language not supported",
+                                    Toast.LENGTH_LONG).show();
+                            Log.e("TTS", "Language is not supported");
+                        }
+                        else {
+                            Toast.makeText(TableGame.this, "Language Initialized to " + tts.getLanguage().toString(), Toast.LENGTH_LONG)
+                                    .show();
+
+                            ivGameStatus.setImageResource(R.drawable.gameison);
+                            ivGameStatus.setVisibility(View.VISIBLE);
+
+                            ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
+                            scaleAnimation.setDuration(500l);
+                            ivGameStatus.startAnimation(scaleAnimation);
+
+                            //media = TableSound.createSound(TableGame.this, tableNumber, tableMultiplier);
+                            //TableSound.playSound(media);
+                            playTableGame();
+
+                        }
+                        // Enable the button - It was disabled in main.xml (Go back and
+                        // Check it)
+
+                        // TTS is not initialized properly
+                    } else {
+                        Toast.makeText(TableGame.this, "TTS Initilization Failed", Toast.LENGTH_LONG)
+                                .show();
+                        Log.e("TTS", "Initilization Failed");
+                    }
+                }
+            });
+        }
+
+
 
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        tts.shutdown();
+        gameStatusSound.release();
+    }
+
     protected void playTableGame(){
-        if (gameON == true){
-            if((tableMultiplier < 10) && (correctAnswerClicked == false)) {
+
+        if (gameMode == GAME_MODE_KID){
+
+            tts.setSpeechRate(0.8f);
+            if(!gameON){
+                tableMultiplier = 1;
+                correctAnswerClicked = false;
+                wrongAnswerClicked = false;
+                gameON = true;
+
+                tvTableRowCurrentIndex = 0;
+                tvChoiceBoxCurrentIndex = 0;
+
                 tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
                 tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(PURPLE);//
                 tvTableRow[tvTableRowCurrentIndex].setTextColor(GREEN);
                 tvTableRow[tvTableRowCurrentIndex].setVisibility(View.VISIBLE);
+                tts.speak(tableNumber + "..  " + tableMultiplier + "'s aa", TextToSpeech.QUEUE_FLUSH, null);
+
                 AlphaAnimation alphaAnimation = new AlphaAnimation(0.1f, 1.0f);
                 alphaAnimation.setDuration(600l);
                 tvTableRow[tvTableRowCurrentIndex].setAlpha(1.0f);
                 tvTableRow[tvTableRowCurrentIndex].startAnimation(alphaAnimation);
+
                 setChoiceList();
-                for (tvChoiceRowCurrentIndex=0; tvChoiceRowCurrentIndex<5; tvChoiceRowCurrentIndex++){
-                    tvChoiceRow[tvChoiceRowCurrentIndex].setText(choiceList.get(tvChoiceRowCurrentIndex).toString());
-                    tvChoiceRow[tvChoiceRowCurrentIndex].setVisibility(View.VISIBLE);
+
+                for (tvChoiceBoxCurrentIndex = 0; tvChoiceBoxCurrentIndex < 5; tvChoiceBoxCurrentIndex++) {
+                    tvChoiceBox[tvChoiceBoxCurrentIndex].setText(choiceList.get(tvChoiceBoxCurrentIndex).toString());
+                    tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.VISIBLE);
                 }
             }
-            if((tableMultiplier < 10) && correctAnswerClicked) {
-                TableSound.releaseSound(media);
 
-                ivGameStatus.setImageResource(R.drawable.welldone);
-                ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
-                scaleAnimation.setDuration(500l);
-                ivGameStatus.startAnimation(scaleAnimation);
+            if (gameON) {
 
-                tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
-                tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(GREEN);
-                tvTableRow[tvTableRowCurrentIndex].setTextColor(PURPLE);
-                gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.correct);
-                gameStatusSound.start();
-                try {
-
-                    Thread.sleep(700);
-                } catch (InterruptedException e) {
-
+                if (wrongAnswerClicked) {
+                    gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.gunshot);
+                    gameStatusSound.start();
+                    ivGameStatus.setImageResource(R.drawable.no);
+                    ScaleAnimation scaleAnimation = new ScaleAnimation(0.6f, 1.0f, 0.6f, 1.0f);
+                    scaleAnimation.setDuration(500l);
+                    ivGameStatus.startAnimation(scaleAnimation);
                 }
+                else if ((tableMultiplier < 10) && (correctAnswerClicked)) {
+                    ivGameStatus.setImageResource(R.drawable.welldone);
+                    ScaleAnimation scaleAnimation = new ScaleAnimation(0.6f, 1.0f, 0.6f, 1.0f);
+                    scaleAnimation.setDuration(500l);
+                    ivGameStatus.startAnimation(scaleAnimation);
 
+                    tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
+                    tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(GREEN);
+                    tvTableRow[tvTableRowCurrentIndex].setTextColor(PURPLE);
+                    gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.correct);
+                    gameStatusSound.start();
+                    try {
 
-                tableMultiplier++;
-                tvTableRowCurrentIndex++;
-                correctAnswerClicked = false;
-
-                tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
-                tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(PURPLE);
-                tvTableRow[tvTableRowCurrentIndex].setTextColor(GREEN);
-                tvTableRow[tvTableRowCurrentIndex].setVisibility(View.VISIBLE);
-                setChoiceList();
-                for (tvChoiceRowCurrentIndex=0; tvChoiceRowCurrentIndex<5; tvChoiceRowCurrentIndex++){
-                    tvChoiceRow[tvChoiceRowCurrentIndex].setText(choiceList.get(tvChoiceRowCurrentIndex).toString());
-                    tvChoiceRow[tvChoiceRowCurrentIndex].setVisibility(View.VISIBLE);
-                }
-                AlphaAnimation alphaAnimation = new AlphaAnimation(0.1f, 1.0f);
-                alphaAnimation.setDuration(600l);
-                tvTableRow[tvTableRowCurrentIndex].setAlpha(1.0f);
-                tvTableRow[tvTableRowCurrentIndex].startAnimation(alphaAnimation);
-
-                media = TableSound.createSound(TableGame.this, tableNumber, tableMultiplier);
-                TableSound.playSound(media);
-
-                /*String textToSayLoud = tableNumber + "  " + tableMultiplier + " s  are";
-                TextToSpeech tts = new TextToSpeech(TableGame.this, new TextToSpeech.OnInitListener(){
-
-                    @Override
-                    public void onInit(int status) {
-
-                            tts.setLanguage(Locale.UK);
-
-
+                        Thread.sleep(700);
+                    } catch (InterruptedException e) {
                     }
-                });
-                //tts.setLanguage(Locale.US);
-                tts.speak(textToSayLoud, TextToSpeech.QUEUE_ADD, null);*/
 
-            }
-            if((tableMultiplier == 10) && correctAnswerClicked) {
-                tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(GREEN);
-                tvTableRow[tvTableRowCurrentIndex].setTextColor(PURPLE);
-                tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
 
-                ivGameStatus.setImageResource(R.drawable.welldone2);
-                ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
-                scaleAnimation.setDuration(500l);
-                ivGameStatus.startAnimation(scaleAnimation);
+                    tableMultiplier++;
+                    tvTableRowCurrentIndex++;
+                    correctAnswerClicked = false;
 
-                gameON = false;
-                gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.greatwelldone);
-                gameStatusSound.start();
-                try {
+                    tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
+                    tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(PURPLE);
+                    tvTableRow[tvTableRowCurrentIndex].setTextColor(GREEN);
+                    tvTableRow[tvTableRowCurrentIndex].setVisibility(View.VISIBLE);
+                    setChoiceList();
+                    for (tvChoiceBoxCurrentIndex = 0; tvChoiceBoxCurrentIndex < 5; tvChoiceBoxCurrentIndex++) {
+                        tvChoiceBox[tvChoiceBoxCurrentIndex].setText(choiceList.get(tvChoiceBoxCurrentIndex).toString());
+                        tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.VISIBLE);
+                    }
+                    AlphaAnimation alphaAnimation = new AlphaAnimation(0.1f, 1.0f);
+                    alphaAnimation.setDuration(600l);
+                    tvTableRow[tvTableRowCurrentIndex].setAlpha(1.0f);
+                    tvTableRow[tvTableRowCurrentIndex].startAnimation(alphaAnimation);
 
-                    Thread.sleep(2500);
-                } catch (InterruptedException e) {
 
+                    tts.speak(tableNumber + "  ..  " + tableMultiplier + "'s aa", TextToSpeech.QUEUE_FLUSH, null);
+                    //TableSound.playSound(media);
                 }
-                gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.claps);
-                gameStatusSound.start();
-            }
 
-            /*if(tableMultiplier>=10){
-                gameON = false;
-                correctAnswerClicked = false;
-            }*/
+                else if ((tableMultiplier == 10) && correctAnswerClicked) {
+                    tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(GREEN);
+                    tvTableRow[tvTableRowCurrentIndex].setTextColor(PURPLE);
+                    tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
+
+                    ivGameStatus.setImageResource(R.drawable.welldone2);
+                    ScaleAnimation scaleAnimation = new ScaleAnimation(0.1f, 1.0f, 0.1f, 1.0f);
+                    scaleAnimation.setDuration(500l);
+                    ivGameStatus.startAnimation(scaleAnimation);
+
+                    gameON = false;
+                    gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.greatwelldone);
+                    gameStatusSound.start();
+                    try {
+
+                        Thread.sleep(2500);
+                    } catch (InterruptedException e) {
+                    }
+
+                    gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.claps);
+                    gameStatusSound.start();
+                }
+            }
         }
 
 
     }
+
+
+
 
     String createTableRowText(){
         String returnString;
