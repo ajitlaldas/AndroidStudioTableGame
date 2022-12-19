@@ -279,8 +279,16 @@ public class TableGame extends AppCompatActivity {
 
         if (gameMode == GAME_MODE_KID){
 
-            tts.setSpeechRate(0.8f);
+
             if(!gameON){
+
+                //tts.setSpeechRate(0.2f);
+                try {
+
+                    Thread.sleep(700);
+                } catch (InterruptedException e) {
+                }
+
                 tableMultiplier = 1;
                 correctAnswerClicked = false;
                 wrongAnswerClicked = false;
@@ -327,6 +335,18 @@ public class TableGame extends AppCompatActivity {
                     tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
                     tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(GREEN);
                     tvTableRow[tvTableRowCurrentIndex].setTextColor(PURPLE);
+
+
+
+                    tableMultiplier++;
+                    tvTableRowCurrentIndex++;
+                    correctAnswerClicked = false;
+
+                    setChoiceList();
+                    for (tvChoiceBoxCurrentIndex = 0; tvChoiceBoxCurrentIndex < 5; tvChoiceBoxCurrentIndex++) {
+                        tvChoiceBox[tvChoiceBoxCurrentIndex].setText(choiceList.get(tvChoiceBoxCurrentIndex).toString());
+                        //tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.VISIBLE);
+                    }
                     gameStatusSound = MediaPlayer.create(TableGame.this, R.raw.correct);
                     gameStatusSound.start();
                     try {
@@ -334,21 +354,11 @@ public class TableGame extends AppCompatActivity {
                         Thread.sleep(700);
                     } catch (InterruptedException e) {
                     }
-
-
-                    tableMultiplier++;
-                    tvTableRowCurrentIndex++;
-                    correctAnswerClicked = false;
-
                     tvTableRow[tvTableRowCurrentIndex].setText(createTableRowText());
                     tvTableRow[tvTableRowCurrentIndex].setBackgroundColor(PURPLE);
                     tvTableRow[tvTableRowCurrentIndex].setTextColor(GREEN);
                     tvTableRow[tvTableRowCurrentIndex].setVisibility(View.VISIBLE);
-                    setChoiceList();
-                    for (tvChoiceBoxCurrentIndex = 0; tvChoiceBoxCurrentIndex < 5; tvChoiceBoxCurrentIndex++) {
-                        tvChoiceBox[tvChoiceBoxCurrentIndex].setText(choiceList.get(tvChoiceBoxCurrentIndex).toString());
-                        tvChoiceBox[tvChoiceBoxCurrentIndex].setVisibility(View.VISIBLE);
-                    }
+
                     AlphaAnimation alphaAnimation = new AlphaAnimation(0.1f, 1.0f);
                     alphaAnimation.setDuration(600l);
                     tvTableRow[tvTableRowCurrentIndex].setAlpha(1.0f);
